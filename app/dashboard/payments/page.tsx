@@ -19,7 +19,6 @@ import {
   CreditCard,
   Calendar,
   User,
-  Bank,
   Smartphone,
   Search,
   RefreshCw,
