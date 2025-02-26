@@ -104,7 +104,7 @@ export const NavigationSidebar = () => {
               <path d="M2 17l10 5 10-5" />
               <path d="M2 12l10 5 10-5" />
             </svg>
-            <span>OmniBank</span>
+            <span>FinPal</span>
           </Link>
         </div>
         
@@ -136,10 +136,12 @@ export const NavigationSidebar = () => {
               Support
             </h4>
             <div className="space-y-1">
+              <Link href="/dashboard/help">
               <Button variant="ghost" className="w-full justify-start gap-3">
                 <HelpCircle className="h-5 w-5 text-muted-foreground" />
                 Help & Support
               </Button>
+              </Link>
               <Button variant="ghost" className="w-full justify-start gap-3">
                 <Settings className="h-5 w-5 text-muted-foreground" />
                 Settings
