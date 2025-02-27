@@ -17,7 +17,7 @@ import {
   Settings,
   BellRing,
   HelpCircle,
-  LogOut
+  LogOut,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -27,38 +27,38 @@ const routes = [
     label: "Dashboard",
     icon: Home,
     href: "/dashboard",
-    color: "text-sky-500"
+    color: "text-sky-500",
   },
   {
     label: "Banking",
     icon: CreditCard,
     href: "/dashboard/banking",
-    color: "text-violet-500"
+    color: "text-violet-500",
   },
   {
     label: "Investments",
     icon: BarChart3,
     href: "/dashboard/investments",
-    color: "text-pink-700"
+    color: "text-pink-700",
   },
   {
     label: "Budget & Expenses",
     icon: PieChart,
     href: "/dashboard/budgeting",
-    color: "text-orange-700"
+    color: "text-orange-700",
   },
   {
     label: "Payments & Transfers",
     icon: Receipt,
     href: "/dashboard/payments",
-    color: "text-emerald-500"
+    color: "text-emerald-500",
   },
   {
     label: "Tax Filing",
     icon: FileText,
     href: "/dashboard/tax",
-    color: "text-blue-700"
-  }
+    color: "text-blue-700",
+  },
 ];
 
 export const NavigationSidebar = () => {
@@ -76,17 +76,17 @@ export const NavigationSidebar = () => {
       >
         {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
       </Button>
-    
+
       {/* Sidebar */}
-      <div 
+      <div
         className={cn(
           "fixed inset-y-0 left-0 z-40 flex w-72 flex-col bg-background border-r transition-transform duration-300 ease-in-out md:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
         <div className="flex h-14 items-center px-4 border-b">
-          <Link 
-            href="/dashboard" 
+          <Link
+            href="/dashboard"
             className="flex items-center gap-2 font-semibold text-xl"
             onClick={() => setIsOpen(false)}
           >
@@ -107,7 +107,7 @@ export const NavigationSidebar = () => {
             <span>FinPal</span>
           </Link>
         </div>
-        
+
         <ScrollArea className="flex-1 px-3 py-2">
           <div className="space-y-1 py-2">
             {routes.map((route) => (
@@ -130,17 +130,17 @@ export const NavigationSidebar = () => {
               </Link>
             ))}
           </div>
-          
+
           <div className="py-2">
             <h4 className="px-2 py-1 text-xs font-semibold text-muted-foreground">
               Support
             </h4>
             <div className="space-y-1">
               <Link href="/dashboard/help">
-              <Button variant="ghost" className="w-full justify-start gap-3">
-                <HelpCircle className="h-5 w-5 text-muted-foreground" />
-                Help & Support
-              </Button>
+                <Button variant="ghost" className="w-full justify-start gap-3">
+                  <HelpCircle className="h-5 w-5 text-muted-foreground" />
+                  Help & Support
+                </Button>
               </Link>
               <Button variant="ghost" className="w-full justify-start gap-3">
                 <Settings className="h-5 w-5 text-muted-foreground" />
@@ -153,7 +153,7 @@ export const NavigationSidebar = () => {
             </div>
           </div>
         </ScrollArea>
-        
+
         <div className="border-t p-3">
           <Button variant="outline" className="w-full justify-start gap-3">
             <LogOut className="h-5 w-5" />

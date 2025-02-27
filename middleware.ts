@@ -1,6 +1,23 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+import { clerkMiddleware } from '@clerk/nextjs/server';
 
-export default clerkMiddleware()
+export default clerkMiddleware({
+  // Public routes that don't require authentication
+  publicRoutes: [
+    '/',                // Landing page
+    '/api/.*',          // Public API routes
+    '/terms',           // Terms of service
+    '/privacy',         // Privacy policy
+    // Add any other public routes here
+  ],
+  
+  // Routes that can be accessed by authenticated and non-authenticated users
+  ignoredRoutes: [
+    '/_next/static/.*', // Next.js static files
+    '/favicon.ico',
+    '/images/.*',       // Public images
+    // Add any other ignored routes here
+  ],
+});
 
 export const config = {
   matcher: [
@@ -9,4 +26,4 @@ export const config = {
     // Always run for API routes
     '/(api|trpc)(.*)',
   ],
-}
+};
