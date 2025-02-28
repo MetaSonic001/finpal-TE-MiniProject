@@ -1,14 +1,15 @@
-'use client';
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
 
-import { motion } from 'framer-motion';
-import { useInView } from 'react-intersection-observer';
-import { Globe, LineChart, TrendingUp } from 'lucide-react';
-import Image from 'next/image';
+import { motion } from "framer-motion";
+import { useInView } from "react-intersection-observer";
+import { Globe, LineChart, TrendingUp } from "lucide-react";
+import Image from "next/image";
 
 export default function MarketTools() {
   const [ref, inView] = useInView({
     triggerOnce: true,
-    threshold: 0.1
+    threshold: 0.1,
   });
 
   const containerVariants = {
@@ -16,9 +17,9 @@ export default function MarketTools() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.2
-      }
-    }
+        staggerChildren: 0.2,
+      },
+    },
   };
 
   const itemVariants = {
@@ -27,9 +28,9 @@ export default function MarketTools() {
       opacity: 1,
       y: 0,
       transition: {
-        duration: 0.6
-      }
-    }
+        duration: 0.6,
+      },
+    },
   };
 
   return (
@@ -42,10 +43,13 @@ export default function MarketTools() {
           variants={containerVariants}
           className="text-center mb-16"
         >
-          <h2 className="text-5xl font-bold text-white mb-6">Everything in one place</h2>
+          <h2 className="text-5xl font-bold text-white mb-6">
+            Everything in one place
+          </h2>
           <p className="text-xl text-gray-400 max-w-3xl mx-auto">
-            All your financial insights, tools, and data in one place. Track assets, explore
-            trends, and make data-driven investment decisions with ease.
+            All your financial insights, tools, and data in one place. Track
+            assets, explore trends, and make data-driven investment decisions
+            with ease.
           </p>
         </motion.div>
 
@@ -82,23 +86,35 @@ export default function MarketTools() {
                 className="object-cover"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-[#0d1117] to-transparent"></div>
-              
+
               <div className="absolute bottom-0 left-0 right-0 p-8">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="bg-[#252525]/80 backdrop-blur-sm p-6 rounded-xl">
                     <Globe className="w-8 h-8 text-blue-500 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">Global Markets</h3>
-                    <p className="text-gray-400">Track markets worldwide with real-time data and analysis</p>
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      Global Markets
+                    </h3>
+                    <p className="text-gray-400">
+                      Track markets worldwide with real-time data and analysis
+                    </p>
                   </div>
                   <div className="bg-[#252525]/80 backdrop-blur-sm p-6 rounded-xl">
                     <LineChart className="w-8 h-8 text-green-500 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">Advanced Charts</h3>
-                    <p className="text-gray-400">Powerful charting tools with technical indicators</p>
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      Advanced Charts
+                    </h3>
+                    <p className="text-gray-400">
+                      Powerful charting tools with technical indicators
+                    </p>
                   </div>
                   <div className="bg-[#252525]/80 backdrop-blur-sm p-6 rounded-xl">
                     <TrendingUp className="w-8 h-8 text-purple-500 mb-4" />
-                    <h3 className="text-xl font-semibold text-white mb-2">Market Analysis</h3>
-                    <p className="text-gray-400">Deep insights and analytics for informed decisions</p>
+                    <h3 className="text-xl font-semibold text-white mb-2">
+                      Market Analysis
+                    </h3>
+                    <p className="text-gray-400">
+                      Deep insights and analytics for informed decisions
+                    </p>
                   </div>
                 </div>
               </div>
