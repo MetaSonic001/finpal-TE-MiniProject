@@ -21,18 +21,20 @@ import {
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card, CardContent } from "@/components/ui/card";
+import { formatCurrency } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Invoice {
   id: string;
-  invoiceNumber: string;
-  invoiceDate: Date;
-  customerName: string;
-  customerGST?: string | null;
-  totalAmount: number;
+  invoice_number: string;
+  invoice_date: string;
+  customer_name: string;
+  customer_gst?: string | null;
+  total_amount: number;
   cgst: number;
   sgst: number;
   igst: number;
-  totalTax: number;
+  total_tax: number;
 }
 
 interface InvoiceListProps {
@@ -42,13 +44,31 @@ interface InvoiceListProps {
 
 export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 2,
-    }).format(amount);
+  const handleDelete = async (id: string) => {
+    if (!onDelete) return;
+
+    setIsDeleting(id);
+    try {
+      const response = await fetch(`/api/gst/invoices/${id}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json();
+
+      if (result.success) {
+        onDelete(id);
+        toast.success("Invoice deleted successfully");
+      } else {
+        toast.error(result.error || "Failed to delete invoice");
+      }
+    } catch (error) {
+      toast.error("An error occurred while deleting the invoice");
+      console.error(error);
+    } finally {
+      setIsDeleting(null);
+    }
   };
 
   return (
@@ -79,17 +99,17 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
               invoices.map((invoice) => (
                 <TableRow key={invoice.id}>
                   <TableCell className="font-medium">
-                    {invoice.invoiceNumber}
+                    {invoice.invoice_number}
                   </TableCell>
                   <TableCell>
-                    {format(new Date(invoice.invoiceDate), "dd MMM yyyy")}
+                    {format(new Date(invoice.invoice_date), "dd MMM yyyy")}
                   </TableCell>
-                  <TableCell>{invoice.customerName}</TableCell>
+                  <TableCell>{invoice.customer_name}</TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(invoice.totalAmount)}
+                    {formatCurrency(invoice.total_amount)}
                   </TableCell>
                   <TableCell className="text-right">
-                    {formatCurrency(invoice.totalTax)}
+                    {formatCurrency(invoice.total_tax)}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
@@ -107,7 +127,8 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => onDelete(invoice.id)}
+                          onClick={() => handleDelete(invoice.id)}
+                          disabled={isDeleting === invoice.id}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -129,7 +150,7 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
           <DialogHeader>
             <DialogTitle>Invoice Details</DialogTitle>
             <DialogDescription>
-              Invoice #{selectedInvoice?.invoiceNumber}
+              Invoice #{selectedInvoice?.invoice_number}
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="max-h-[60vh]">
@@ -142,13 +163,13 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
                         Invoice Number:
                       </span>
                       <span className="font-medium">
-                        {selectedInvoice.invoiceNumber}
+                        {selectedInvoice.invoice_number}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Date:</span>
                       <span className="font-medium">
-                        {format(new Date(selectedInvoice.invoiceDate), "PPP")}
+                        {format(new Date(selectedInvoice.invoice_date), "PPP")}
                       </span>
                     </div>
                   </CardContent>
@@ -159,16 +180,16 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Customer:</span>
                       <span className="font-medium">
-                        {selectedInvoice.customerName}
+                        {selectedInvoice.customer_name}
                       </span>
                     </div>
-                    {selectedInvoice.customerGST && (
+                    {selectedInvoice.customer_gst && (
                       <div className="flex justify-between">
                         <span className="text-muted-foreground">
                           GST Number:
                         </span>
                         <span className="font-medium">
-                          {selectedInvoice.customerGST}
+                          {selectedInvoice.customer_gst}
                         </span>
                       </div>
                     )}
@@ -182,7 +203,7 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
                         Total Amount:
                       </span>
                       <span className="font-medium">
-                        {formatCurrency(selectedInvoice.totalAmount)}
+                        {formatCurrency(selectedInvoice.total_amount)}
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -206,7 +227,7 @@ export function InvoiceList({ invoices, onDelete }: InvoiceListProps) {
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Total Tax:</span>
                       <span className="font-medium">
-                        {formatCurrency(selectedInvoice.totalTax)}
+                        {formatCurrency(selectedInvoice.total_tax)}
                       </span>
                     </div>
                   </CardContent>

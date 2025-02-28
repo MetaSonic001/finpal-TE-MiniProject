@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
@@ -50,6 +51,8 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import type { FilingStatus } from "@/types/supabase";
 
 // Mock data for tax filing
 const taxData = {
@@ -154,103 +157,198 @@ const taxData = {
   ],
 };
 
-// Mock GST data
-const mockGSTFilings = [
-  {
-    id: "1",
-    returnType: "GSTR-3B",
-    period: "January 2025",
-    dueDate: new Date("2025-02-20"),
-    status: "NOT_STARTED",
-    totalTaxLiability: 45000,
-    totalITC: 32000,
-    taxPayable: 13000,
-  },
-];
-
-const mockInvoices = [
-  {
-    id: "1",
-    invoiceNumber: "INV-001",
-    invoiceDate: new Date("2025-01-15"),
-    customerName: "ABC Enterprises",
-    customerGST: "29ABCDE1234F1Z5",
-    totalAmount: 118000,
-    cgst: 9000,
-    sgst: 9000,
-    igst: 0,
-    totalTax: 18000,
-  },
-  {
-    id: "2",
-    invoiceNumber: "INV-002",
-    invoiceDate: new Date("2025-01-22"),
-    customerName: "XYZ Corporation",
-    customerGST: "27XYZAB5678G1Z3",
-    totalAmount: 236000,
-    cgst: 18000,
-    sgst: 18000,
-    igst: 0,
-    totalTax: 36000,
-  },
-];
+// Mock user ID - in a real app, this would come from authentication
+const mockUserId = "123e4567-e89b-12d3-a456-426614174000";
 
 export default function TaxFilingPage() {
   const [activeTab, setActiveTab] = useState("income-tax");
   const [showAddInvoice, setShowAddInvoice] = useState(false);
   const [showFileReturn, setShowFileReturn] = useState(false);
-  const [gstFilings, setGstFilings] = useState(mockGSTFilings);
-  const [invoices, setInvoices] = useState(mockInvoices);
+  const [gstFilings, setGstFilings] = useState<any[]>([]);
+  const [invoices, setInvoices] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // In a real application, you would fetch this data from the server
-  // using the server actions we created
+  // Fetch GST filings and invoices from Supabase
   useEffect(() => {
-    // Simulate fetching data
-    const fetchData = async () => {
-      // In a real app, this would be:
-      // const result = await getGSTFilings(userId)
-      // if (result.success) {
-      //   setGstFilings(result.data)
-      // }
+    const fetchGSTData = async () => {
+      setIsLoading(true);
+      try {
+        // Fetch GST filings
+        const { data: filingsData, error: filingsError } = await supabase
+          .from("gst_filings")
+          .select("*")
+          .eq("user_id", mockUserId)
+          .order("due_date", { ascending: false });
 
-      // For demo purposes, we'll use the mock data
-      setGstFilings(mockGSTFilings);
-      setInvoices(mockInvoices);
+        if (filingsError) throw filingsError;
+
+        if (filingsData && filingsData.length > 0) {
+          setGstFilings(filingsData);
+
+          // Fetch invoices for the first GST filing
+          const { data: invoicesData, error: invoicesError } = await supabase
+            .from("gst_invoices")
+            .select("*")
+            .eq("gst_filing_id", filingsData[0].id)
+            .order("invoice_date", { ascending: false });
+
+          if (invoicesError) throw invoicesError;
+
+          setInvoices(invoicesData || []);
+        } else {
+          // If no filings exist, create a default one
+          const { data: newFiling, error: newFilingError } = await supabase
+            .from("gst_filings")
+            .insert({
+              user_id: mockUserId,
+              gst_number: taxData.gstDetails.gstNumber,
+              return_type: "GSTR-3B",
+              period: "January 2025",
+              due_date: new Date("2025-02-20").toISOString(),
+              status: "NOT_STARTED" as FilingStatus,
+              total_tax_liability: 0,
+              total_itc: 0,
+              tax_payable: 0,
+            })
+            .select();
+
+          if (newFilingError) throw newFilingError;
+
+          if (newFiling) {
+            setGstFilings(newFiling);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching GST data:", error);
+        toast.error("Failed to load GST data");
+
+        // Use mock data as fallback
+        setGstFilings([
+          {
+            id: "mock-filing-id",
+            user_id: mockUserId,
+            gst_number: taxData.gstDetails.gstNumber,
+            return_type: "GSTR-3B",
+            period: "January 2025",
+            due_date: new Date("2025-02-20").toISOString(),
+            status: "NOT_STARTED" as FilingStatus,
+            total_tax_liability: 45000,
+            total_itc: 32000,
+            tax_payable: 13000,
+          },
+        ]);
+
+        setInvoices([
+          {
+            id: "mock-invoice-1",
+            gst_filing_id: "mock-filing-id",
+            invoice_number: "INV-001",
+            invoice_date: new Date("2025-01-15").toISOString(),
+            customer_name: "ABC Enterprises",
+            customer_gst: "29ABCDE1234F1Z5",
+            total_amount: 118000,
+            cgst: 9000,
+            sgst: 9000,
+            igst: 0,
+            total_tax: 18000,
+          },
+          {
+            id: "mock-invoice-2",
+            gst_filing_id: "mock-filing-id",
+            invoice_number: "INV-002",
+            invoice_date: new Date("2025-01-22").toISOString(),
+            customer_name: "XYZ Corporation",
+            customer_gst: "27XYZAB5678G1Z3",
+            total_amount: 236000,
+            cgst: 18000,
+            sgst: 18000,
+            igst: 0,
+            total_tax: 36000,
+          },
+        ]);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchData();
+    fetchGSTData();
   }, []);
 
-  const handleAddInvoice = () => {
-    // In a real app, this would be handled by the server action
-    // and the UI would be updated via revalidatePath
-
-    // For demo purposes, we'll just close the dialog
+  const handleAddInvoice = async () => {
     setShowAddInvoice(false);
-    toast.success("Invoice added successfully");
+
+    // Refresh invoices
+    try {
+      const { data, error } = await supabase
+        .from("gst_invoices")
+        .select("*")
+        .eq("gst_filing_id", gstFilings[0]?.id)
+        .order("invoice_date", { ascending: false });
+
+      if (error) throw error;
+
+      setInvoices(data || []);
+
+      // Also refresh the GST filing to get updated tax amounts
+      const { data: filingData, error: filingError } = await supabase
+        .from("gst_filings")
+        .select("*")
+        .eq("id", gstFilings[0]?.id)
+        .single();
+
+      if (filingError) throw filingError;
+
+      setGstFilings((prev) => [filingData, ...prev.slice(1)]);
+    } catch (error) {
+      console.error("Error refreshing data:", error);
+    }
   };
 
-  const handleFileReturn = () => {
-    // In a real app, this would be handled by the server action
-    // and the UI would be updated via revalidatePath
-
-    // For demo purposes, we'll just close the dialog and update the mock data
+  const handleFileReturn = async () => {
     setShowFileReturn(false);
-    setGstFilings((prev) =>
-      prev.map((filing) => ({
-        ...filing,
-        status: "FILED",
-      }))
-    );
-    toast.success("GST return filed successfully");
+
+    // Refresh GST filings
+    try {
+      const { data, error } = await supabase
+        .from("gst_filings")
+        .select("*")
+        .eq("id", gstFilings[0]?.id)
+        .single();
+
+      if (error) throw error;
+
+      setGstFilings((prev) => [data, ...prev.slice(1)]);
+    } catch (error) {
+      console.error("Error refreshing filing data:", error);
+    }
   };
 
-  const handleDeleteInvoice = (id: string) => {
-    // In a real app, this would be handled by a server action
+  const handleDeleteInvoice = async (id: string) => {
+    // Refresh invoices after deletion
+    try {
+      const { data, error } = await supabase
+        .from("gst_invoices")
+        .select("*")
+        .eq("gst_filing_id", gstFilings[0]?.id)
+        .order("invoice_date", { ascending: false });
 
-    // For demo purposes, we'll just update the local state
-    setInvoices((prev) => prev.filter((invoice) => invoice.id !== id));
-    toast.success("Invoice deleted successfully");
+      if (error) throw error;
+
+      setInvoices(data || []);
+
+      // Also refresh the GST filing to get updated tax amounts
+      const { data: filingData, error: filingError } = await supabase
+        .from("gst_filings")
+        .select("*")
+        .eq("id", gstFilings[0]?.id)
+        .single();
+
+      if (filingError) throw filingError;
+
+      setGstFilings((prev) => [filingData, ...prev.slice(1)]);
+    } catch (error) {
+      console.error("Error refreshing data after deletion:", error);
+    }
   };
 
   return (
@@ -645,204 +743,231 @@ export default function TaxFilingPage() {
         {/* GST Tab Content */}
         <TabsContent value="gst" className="space-y-6">
           {/* GST Summary Card */}
-          <GSTSummary
-            gstNumber={taxData.gstDetails.gstNumber}
-            pendingReturns={
-              gstFilings.filter(
-                (f) => f.status === "NOT_STARTED" || f.status === "IN_PROGRESS"
-              ).length
-            }
-            lastFiled={
-              gstFilings.find(
-                (f) => f.status === "FILED" || f.status === "PROCESSED"
-              )
-                ? {
-                    period:
-                      gstFilings.find(
-                        (f) => f.status === "FILED" || f.status === "PROCESSED"
-                      )?.period || "",
-                    filingDate: new Date(),
-                  }
-                : null
-            }
-            nextDue={
-              gstFilings.find(
-                (f) => f.status === "NOT_STARTED" || f.status === "IN_PROGRESS"
-              )
-                ? {
-                    period:
-                      gstFilings.find(
-                        (f) =>
-                          f.status === "NOT_STARTED" ||
-                          f.status === "IN_PROGRESS"
-                      )?.period || "",
-                    dueDate:
-                      gstFilings.find(
-                        (f) =>
-                          f.status === "NOT_STARTED" ||
-                          f.status === "IN_PROGRESS"
-                      )?.dueDate || new Date(),
-                  }
-                : undefined
-            }
-            onFileNow={() => setShowFileReturn(true)}
-            onGenerateInvoices={() => setShowAddInvoice(true)}
-          />
+          {isLoading ? (
+            <div className="flex justify-center py-12">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <>
+              <GSTSummary
+                gstNumber={taxData.gstDetails.gstNumber}
+                pendingReturns={
+                  gstFilings.filter(
+                    (f) =>
+                      f.status === "NOT_STARTED" || f.status === "IN_PROGRESS"
+                  ).length
+                }
+                lastFiled={
+                  gstFilings.find(
+                    (f) => f.status === "FILED" || f.status === "PROCESSED"
+                  )
+                    ? {
+                        period:
+                          gstFilings.find(
+                            (f) =>
+                              f.status === "FILED" || f.status === "PROCESSED"
+                          )?.period || "",
+                        filingDate: gstFilings.find(
+                          (f) =>
+                            f.status === "FILED" || f.status === "PROCESSED"
+                        )?.filing_date,
+                      }
+                    : null
+                }
+                nextDue={
+                  gstFilings.find(
+                    (f) =>
+                      f.status === "NOT_STARTED" || f.status === "IN_PROGRESS"
+                  )
+                    ? {
+                        period:
+                          gstFilings.find(
+                            (f) =>
+                              f.status === "NOT_STARTED" ||
+                              f.status === "IN_PROGRESS"
+                          )?.period || "",
+                        dueDate: new Date(
+                          gstFilings.find(
+                            (f) =>
+                              f.status === "NOT_STARTED" ||
+                              f.status === "IN_PROGRESS"
+                          )?.due_date || ""
+                        ),
+                      }
+                    : undefined
+                }
+                onFileNow={() => setShowFileReturn(true)}
+                onGenerateInvoices={() => setShowAddInvoice(true)}
+              />
 
-          {/* GST Filing Details */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div>
-                <CardTitle>GST Filing Details</CardTitle>
-                <CardDescription>
-                  Manage your GST returns and invoices
-                </CardDescription>
-              </div>
-              <div className="flex gap-2">
-                <Dialog open={showAddInvoice} onOpenChange={setShowAddInvoice}>
-                  <DialogTrigger asChild>
-                    <Button size="sm">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Invoice
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Add New Invoice</DialogTitle>
-                      <DialogDescription>
-                        Enter the invoice details to add to your GST filing
-                      </DialogDescription>
-                    </DialogHeader>
-                    <AddInvoiceForm
-                      gstFilingId={gstFilings[0]?.id || "1"}
-                      onSuccess={handleAddInvoice}
-                    />
-                  </DialogContent>
-                </Dialog>
+              {/* GST Filing Details */}
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle>GST Filing Details</CardTitle>
+                    <CardDescription>
+                      Manage your GST returns and invoices
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Dialog
+                      open={showAddInvoice}
+                      onOpenChange={setShowAddInvoice}
+                    >
+                      <DialogTrigger asChild>
+                        <Button size="sm">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Invoice
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-md">
+                        <DialogHeader>
+                          <DialogTitle>Add New Invoice</DialogTitle>
+                          <DialogDescription>
+                            Enter the invoice details to add to your GST filing
+                          </DialogDescription>
+                        </DialogHeader>
+                        <AddInvoiceForm
+                          gstFilingId={gstFilings[0]?.id || "mock-filing-id"}
+                          onSuccess={handleAddInvoice}
+                        />
+                      </DialogContent>
+                    </Dialog>
 
-                <Sheet open={showFileReturn} onOpenChange={setShowFileReturn}>
-                  <SheetTrigger asChild>
-                    <Button>
-                      <FileText className="mr-2 h-4 w-4" />
-                      File Return
-                    </Button>
-                  </SheetTrigger>
-                  <SheetContent className="w-full sm:max-w-md">
-                    <SheetHeader>
-                      <SheetTitle>File GST Return</SheetTitle>
-                      <SheetDescription>
-                        Complete your GST return filing
-                      </SheetDescription>
-                    </SheetHeader>
-                    <div className="mt-6">
-                      <FileGSTReturn
-                        gstFilingId={gstFilings[0]?.id || "1"}
-                        returnType={gstFilings[0]?.returnType || "GSTR-3B"}
-                        period={gstFilings[0]?.period || "January 2025"}
-                        totalTaxLiability={
-                          gstFilings[0]?.totalTaxLiability || 0
-                        }
-                        totalITC={gstFilings[0]?.totalITC || 0}
-                        taxPayable={gstFilings[0]?.taxPayable || 0}
-                        onSuccess={handleFileReturn}
+                    <Sheet
+                      open={showFileReturn}
+                      onOpenChange={setShowFileReturn}
+                    >
+                      <SheetTrigger asChild>
+                        <Button>
+                          <FileText className="mr-2 h-4 w-4" />
+                          File Return
+                        </Button>
+                      </SheetTrigger>
+                      <SheetContent className="w-full sm:max-w-md">
+                        <SheetHeader>
+                          <SheetTitle>File GST Return</SheetTitle>
+                          <SheetDescription>
+                            Complete your GST return filing
+                          </SheetDescription>
+                        </SheetHeader>
+                        <div className="mt-6">
+                          <FileGSTReturn
+                            gstFilingId={gstFilings[0]?.id || "mock-filing-id"}
+                            returnType={gstFilings[0]?.return_type || "GSTR-3B"}
+                            period={gstFilings[0]?.period || "January 2025"}
+                            totalTaxLiability={
+                              gstFilings[0]?.total_tax_liability || 0
+                            }
+                            totalITC={gstFilings[0]?.total_itc || 0}
+                            taxPayable={gstFilings[0]?.tax_payable || 0}
+                            onSuccess={handleFileReturn}
+                          />
+                        </div>
+                      </SheetContent>
+                    </Sheet>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-6">
+                    <div>
+                      <h3 className="text-lg font-medium mb-4">
+                        Current Returns
+                      </h3>
+                      <div className="grid md:grid-cols-3 gap-4">
+                        {gstFilings.map((filing, index) => (
+                          <Card key={index} className="bg-muted/30 border-0">
+                            <CardContent className="p-4">
+                              <div className="flex justify-between items-start mb-2">
+                                <div>
+                                  <div className="font-medium">
+                                    {filing.return_type}
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">
+                                    Period: {filing.period}
+                                  </div>
+                                </div>
+                                <Badge
+                                  variant="outline"
+                                  className={
+                                    filing.status === "FILED" ||
+                                    filing.status === "PROCESSED"
+                                      ? "bg-green-50 text-green-700 border-green-200"
+                                      : "bg-yellow-50 text-yellow-700 border-yellow-200"
+                                  }
+                                >
+                                  {filing.status.replace("_", " ")}
+                                </Badge>
+                              </div>
+                              <div className="space-y-1 mt-3">
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Tax Liability:
+                                  </span>
+                                  <span>
+                                    {formatCurrency(filing.total_tax_liability)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                  <span className="text-muted-foreground">
+                                    Input Tax Credit:
+                                  </span>
+                                  <span>
+                                    {formatCurrency(filing.total_itc)}
+                                  </span>
+                                </div>
+                                <div className="flex justify-between text-sm font-medium">
+                                  <span>Tax Payable:</span>
+                                  <span>
+                                    {formatCurrency(filing.tax_payable)}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="mt-4">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  className="w-full"
+                                  onClick={() => setShowFileReturn(true)}
+                                  disabled={
+                                    filing.status === "FILED" ||
+                                    filing.status === "PROCESSED"
+                                  }
+                                >
+                                  {filing.status === "FILED" ||
+                                  filing.status === "PROCESSED"
+                                    ? "Filed"
+                                    : "File Now"}
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-lg font-medium">Invoices</h3>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowAddInvoice(true)}
+                        >
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Invoice
+                        </Button>
+                      </div>
+                      <InvoiceList
+                        invoices={invoices}
+                        onDelete={handleDeleteInvoice}
                       />
                     </div>
-                  </SheetContent>
-                </Sheet>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div>
-                  <h3 className="text-lg font-medium mb-4">Current Returns</h3>
-                  <div className="grid md:grid-cols-3 gap-4">
-                    {gstFilings.map((filing, index) => (
-                      <Card key={index} className="bg-muted/30 border-0">
-                        <CardContent className="p-4">
-                          <div className="flex justify-between items-start mb-2">
-                            <div>
-                              <div className="font-medium">
-                                {filing.returnType}
-                              </div>
-                              <div className="text-sm text-muted-foreground">
-                                Period: {filing.period}
-                              </div>
-                            </div>
-                            <Badge
-                              variant="outline"
-                              className={
-                                filing.status === "FILED" ||
-                                filing.status === "PROCESSED"
-                                  ? "bg-green-50 text-green-700 border-green-200"
-                                  : "bg-yellow-50 text-yellow-700 border-yellow-200"
-                              }
-                            >
-                              {filing.status.replace("_", " ")}
-                            </Badge>
-                          </div>
-                          <div className="space-y-1 mt-3">
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                Tax Liability:
-                              </span>
-                              <span>
-                                {formatCurrency(filing.totalTaxLiability)}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">
-                                Input Tax Credit:
-                              </span>
-                              <span>{formatCurrency(filing.totalITC)}</span>
-                            </div>
-                            <div className="flex justify-between text-sm font-medium">
-                              <span>Tax Payable:</span>
-                              <span>{formatCurrency(filing.taxPayable)}</span>
-                            </div>
-                          </div>
-                          <div className="mt-4">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="w-full"
-                              onClick={() => setShowFileReturn(true)}
-                              disabled={
-                                filing.status === "FILED" ||
-                                filing.status === "PROCESSED"
-                              }
-                            >
-                              {filing.status === "FILED" ||
-                              filing.status === "PROCESSED"
-                                ? "Filed"
-                                : "File Now"}
-                            </Button>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
                   </div>
-                </div>
-
-                <div>
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-medium">Invoices</h3>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowAddInvoice(true)}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Invoice
-                    </Button>
-                  </div>
-                  <InvoiceList
-                    invoices={invoices}
-                    onDelete={handleDeleteInvoice}
-                  />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </TabsContent>
 
         {/* Tax Planning Tab Content */}

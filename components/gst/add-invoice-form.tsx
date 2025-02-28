@@ -15,7 +15,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { addInvoiceToGSTFiling } from "@/app/actions/gst-actions";
 import { CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -26,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { toast } from "sonner";
+import { generateInvoiceNumber } from "@/lib/gst-calculator";
 
 const invoiceFormSchema = z.object({
   invoiceNumber: z.string().min(1, "Invoice number is required"),
@@ -56,7 +56,7 @@ export function AddInvoiceForm({
   const form = useForm<InvoiceFormValues>({
     resolver: zodResolver(invoiceFormSchema),
     defaultValues: {
-      invoiceNumber: "",
+      invoiceNumber: generateInvoiceNumber(),
       customerName: "",
       customerGST: "",
       totalAmount: 0,
@@ -69,13 +69,25 @@ export function AddInvoiceForm({
   async function onSubmit(data: InvoiceFormValues) {
     setIsSubmitting(true);
     try {
-      const result = await addInvoiceToGSTFiling(gstFilingId, {
-        ...data,
-        totalAmount: Number(data.totalAmount),
-        cgst: Number(data.cgst),
-        sgst: Number(data.sgst),
-        igst: Number(data.igst),
+      const response = await fetch("/api/gst/invoices", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          gstFilingId,
+          invoiceNumber: data.invoiceNumber,
+          invoiceDate: data.invoiceDate.toISOString(),
+          customerName: data.customerName,
+          customerGST: data.customerGST,
+          totalAmount: Number(data.totalAmount),
+          cgst: Number(data.cgst),
+          sgst: Number(data.sgst),
+          igst: Number(data.igst),
+        }),
       });
+
+      const result = await response.json();
 
       if (result.success) {
         toast.success("Invoice added successfully");

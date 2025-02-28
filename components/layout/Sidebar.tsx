@@ -18,7 +18,9 @@ export default function Sidebar() {
     <div className="w-48 bg-white border-r border-gray-200 p-4 hidden md:block">
       <div className="flex items-center mb-6">
         <div className="w-8 h-8 bg-black rounded mr-2" />
-        <span className="text-lg font-semibold">Markets</span>
+        <Link href="/" className="text-xl font-bold">
+          <span className="text-lg font-semibold">Markets</span>
+        </Link>
       </div>
 
       <nav className="space-y-1">

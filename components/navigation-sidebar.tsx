@@ -86,7 +86,7 @@ export const NavigationSidebar = () => {
       >
         <div className="flex h-14 items-center px-4 border-b">
           <Link
-            href="/dashboard"
+            href="/"
             className="flex items-center gap-2 font-semibold text-xl"
             onClick={() => setIsOpen(false)}
           >

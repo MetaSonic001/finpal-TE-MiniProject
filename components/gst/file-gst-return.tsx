@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
@@ -23,8 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { updateGSTFilingStatus } from "@/app/actions/gst-actions";
-import { FilingStatus } from "@prisma/client";
+import type { FilingStatus } from "@/types/supabase";
 import { toast } from "sonner";
 import {
   Card,
@@ -35,6 +33,7 @@ import {
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { FileCheck } from "lucide-react";
+import { formatCurrency } from "@/lib/utils";
 
 const gstReturnSchema = z.object({
   totalSales: z.coerce.number().min(0, "Total sales cannot be negative"),
@@ -84,13 +83,21 @@ export function FileGSTReturn({
     },
   });
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async function onSubmit(data: GSTReturnFormValues) {
     setIsSubmitting(true);
     try {
-      const result = await updateGSTFilingStatus(
-        gstFilingId,
-        FilingStatus.FILED
-      );
+      const response = await fetch(`/api/gst/${gstFilingId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          status: "FILED" as FilingStatus,
+        }),
+      });
+
+      const result = await response.json();
 
       if (result.success) {
         toast.success("GST return filed successfully");
@@ -105,14 +112,6 @@ export function FileGSTReturn({
       setIsSubmitting(false);
     }
   }
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-IN", {
-      style: "currency",
-      currency: "INR",
-      maximumFractionDigits: 2,
-    }).format(amount);
-  };
 
   return (
     <Card className="w-full">
