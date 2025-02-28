@@ -46,14 +46,14 @@ export default function Sidebar() {
 
         <div className="pt-4 text-xs text-gray-500">Calendar</div>
         <Link
-          href="/earnings"
+          href="/investment/earnings"
           className="py-2 px-3 flex items-center text-sm font-medium rounded hover:bg-gray-100"
         >
           <Calendar className="w-4 h-4 mr-2" />
           Earnings
         </Link>
         <Link
-          href="/earnings"
+          href="/investment/earnings"
           className="py-2 px-3 flex items-center text-sm font-medium rounded hover:bg-gray-100"
         >
           <LineChart className="w-4 h-4 mr-2" />
@@ -85,14 +85,14 @@ export default function Sidebar() {
 
         <div className="pt-4 text-xs text-gray-500">Community</div>
         <Link
-          href="/superinvestors"
+          href="/investment/superinvestors"
           className="py-2 px-3 flex items-center text-sm font-medium rounded hover:bg-gray-100"
         >
           <Users className="w-4 h-4 mr-2" />
           Superinvestors
         </Link>
         <Link
-          href="/portfolios"
+          href="/investment/portfolios"
           className="py-2 px-3 flex items-center text-sm font-medium rounded hover:bg-gray-100"
         >
           <Briefcase className="w-4 h-4 mr-2" />
